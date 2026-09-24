@@ -1,0 +1,9 @@
+# Editor / patch-application leftovers
+*.orig
+*.rej
+*~
+.swp
+.DS_Store
+
+# Local notes not for publication
+/LOCAL*

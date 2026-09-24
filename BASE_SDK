@@ -1,0 +1,43 @@
+# SDK snapshots this overlay targets — BOTH trees are required.
+#
+# The product firmware is an SSI + GRF fusion build:
+#   system side = A17 SSI SDK  -> framework target-files (ssi_17_arm64)
+#   vendor side = A14 SDK      -> u-boot, kernel-6.1, vendor/, device tree
+# fused by the vendor side's `build.sh -AKUu -M <merge_tool> -T <target_files>`
+# (see docs/BUILD-FLOW.md).
+#
+# setup.sh cross-checks the manifest SHAs automatically; the rest is your
+# responsibility — read this file before building.
+# Keep it in sync whenever the overlay is rebased onto new SDK snapshots.
+
+# ----- vendor side (A14, GRF: u-boot / kernel-6.1 / vendor) -----
+# ONE checkout shared by all supported chips (RK3576, RK3588) — a single
+# anchor covers both; per-chip products live in the overlay's
+# vendor-side/device/seeed/, not in separate SDK trees.
+# Ask Rockchip for: RK3576 Android 14 SDK, manifest branch "rk3576",
+# release "android-14.0-mid-rkr9".
+VENDOR_SDK_NAME=Rockchip RK3576 Android 14 SDK (rk3576_u baseline)
+VENDOR_SDK_RELEASE=android-14.0-mid-rkr9
+# Date of the manifests commit the sha below points at.
+VENDOR_SDK_DATE=2026-08-07
+# git -C <a14>/.repo/manifests rev-parse HEAD
+VENDOR_MANIFEST_SHA=7bf39f8d3a63c87c24faf0198c4400e0a94f3590
+# Lunch target the overlay installs on the vendor side.
+# Ported from reference product rk3576_u (device/rockchip/rk3576/rk3576_u).
+VENDOR_LUNCH=rk3576_u-userdebug
+
+# ----- system side (A17, SSI: framework / system image) -----
+# Ask Rockchip for: Android 17 SSI SDK, manifest branch "master",
+# release "android-17.0-mid-rkr1".
+SYSTEM_SDK_NAME=Rockchip Android SSI SDK (rockchip_generic)
+SYSTEM_SDK_RELEASE=android-17.0-mid-rkr1
+SSI_VARIANT=ssi_17_arm64
+# Date of the manifests commit the sha below points at.
+SYSTEM_SDK_DATE=2026-08-07
+# git -C <a17>/.repo/manifests rev-parse HEAD
+SYSTEM_MANIFEST_SHA=bee358da747176a305e4c1846e1ed51a6abee667
+# Lunch target for the system side. NOT installed by this overlay (yet):
+# no system-side code is modified so far, so builds use the stock RK SSI
+# target. Replace with the product SSI config (e.g. recomputer_rk3576_ssi)
+# when the first system-side customization lands.
+SYSTEM_LUNCH=ssi_17_arm64-cp2a-userdebug
