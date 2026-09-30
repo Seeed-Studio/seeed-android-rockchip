@@ -1,0 +1,321 @@
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/display/drm_mipi_dsi.h>
+
+/ {
+	touch_reg: touch_reg {
+		compatible = "regulator-fixed";
+		regulator-name = "touch_reg_1";
+		gpio = <&display_mcu 1 GPIO_ACTIVE_HIGH>;
+		startup-delay-us = <50000>;
+		enable-active-high;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+};
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0m1_xfer>;
+
+	display_mcu: display_mcu@45 {
+		compatible = "raspberrypi,v2-touchscreen-panel-regulator";
+		reg = <0x45>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+
+	gt911: gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		AVDD28-supply = <&touch_reg>;
+		touchscreen-size-x = <720>;
+		touchscreen-size-y = <1280>;
+		touchscreen-x-mm = <90>;
+		touchscreen-y-mm = <151>;
+		// touchscreen-inverted-x;
+		// touchscreen-inverted-y;
+		// touchscreen-swapped-x-y;
+	};
+};
+
+&dsi {
+	status = "okay";
+
+	dsi_panel: dsi_panel@0 {
+		reg = <0>;
+		compatible = "simple-panel-dsi";
+		reset-gpios = <&display_mcu 0 GPIO_ACTIVE_LOW>;
+		backlight = <&display_mcu>;
+		rotation = <90>;
+		width-mm = <90>;
+		height-mm = <151>;
+
+		dsi,lanes = <2>;
+		dsi,format = <MIPI_DSI_FMT_RGB888>;
+		dsi,flags = <(MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_LPM)>;
+
+		prepare-delay-ms = <5>;
+		reset-delay-ms = <20>;
+		init-delay-ms = <20>;
+
+		panel-init-sequence = [
+			39 00 04 ff 98 81 03
+			15 00 02 01 00
+			15 00 02 02 00
+			15 00 02 03 73
+			15 00 02 04 00
+			15 00 02 05 00
+			15 00 02 06 0a
+			15 00 02 07 00
+			15 00 02 08 00
+			15 00 02 09 61
+			15 00 02 0a 00
+			15 00 02 0b 00
+			15 00 02 0c 01
+			15 00 02 0d 00
+			15 00 02 0e 00
+			15 00 02 0f 61
+			15 00 02 10 61
+			15 00 02 11 00
+			15 00 02 12 00
+			15 00 02 13 00
+			15 00 02 14 00
+			15 00 02 15 00
+			15 00 02 16 00
+			15 00 02 17 00
+			15 00 02 18 00
+			15 00 02 19 00
+			15 00 02 1a 00
+			15 00 02 1b 00
+			15 00 02 1c 00
+			15 00 02 1d 00
+			15 00 02 1e 40
+			15 00 02 1f 80
+			15 00 02 20 06
+			15 00 02 21 01
+			15 00 02 22 00
+			15 00 02 23 00
+			15 00 02 24 00
+			15 00 02 25 00
+			15 00 02 26 00
+			15 00 02 27 00
+			15 00 02 28 33
+			15 00 02 29 03
+			15 00 02 2a 00
+			15 00 02 2b 00
+			15 00 02 2c 00
+			15 00 02 2d 00
+			15 00 02 2e 00
+			15 00 02 2f 00
+			15 00 02 30 00
+			15 00 02 31 00
+			15 00 02 32 00
+			15 00 02 33 00
+			15 00 02 34 04
+			15 00 02 35 00
+			15 00 02 36 00
+			15 00 02 37 00
+			15 00 02 38 3c
+			15 00 02 39 00
+			15 00 02 3a 00
+			15 00 02 3b 00
+			15 00 02 3c 00
+			15 00 02 3d 00
+			15 00 02 3e 00
+			15 00 02 3f 00
+			15 00 02 40 00
+			15 00 02 41 00
+			15 00 02 42 00
+			15 00 02 43 00
+			15 00 02 44 00
+			15 00 02 50 10
+			15 00 02 51 32
+			15 00 02 52 54
+			15 00 02 53 76
+			15 00 02 54 98
+			15 00 02 55 ba
+			15 00 02 56 10
+			15 00 02 57 32
+			15 00 02 58 54
+			15 00 02 59 76
+			15 00 02 5a 98
+			15 00 02 5b ba
+			15 00 02 5c dc
+			15 00 02 5d fe
+			15 00 02 5e 00
+			15 00 02 5f 0e
+			15 00 02 60 0f
+			15 00 02 61 0c
+			15 00 02 62 0d
+			15 00 02 63 06
+			15 00 02 64 07
+			15 00 02 65 02
+			15 00 02 66 02
+			15 00 02 67 02
+			15 00 02 68 02
+			15 00 02 69 01
+			15 00 02 6a 00
+			15 00 02 6b 02
+			15 00 02 6c 15
+			15 00 02 6d 14
+			15 00 02 6e 02
+			15 00 02 6f 02
+			15 00 02 70 02
+			15 00 02 71 02
+			15 00 02 72 02
+			15 00 02 73 02
+			15 00 02 74 02
+			15 00 02 75 0e
+			15 00 02 76 0f
+			15 00 02 77 0c
+			15 00 02 78 0d
+			15 00 02 79 06
+			15 00 02 7a 07
+			15 00 02 7b 02
+			15 00 02 7c 02
+			15 00 02 7d 02
+			15 00 02 7e 02
+			15 00 02 7f 01
+			15 00 02 80 00
+			15 00 02 81 02
+			15 00 02 82 14
+			15 00 02 83 15
+			15 00 02 84 02
+			15 00 02 85 02
+			15 00 02 86 02
+			15 00 02 87 02
+			15 00 02 88 02
+			15 00 02 89 02
+			15 00 02 8a 02
+			39 00 04 ff 98 81 04
+			15 00 02 6c 15
+			15 00 02 6e 2a
+			15 00 02 6f 33
+			15 00 02 3b 98
+			15 00 02 3a 94
+			15 00 02 8d 14
+			15 00 02 87 ba
+			15 00 02 26 76
+			15 00 02 b2 d1
+			15 00 02 b5 06
+			15 00 02 38 01
+			15 00 02 39 00
+			39 00 04 ff 98 81 01
+			15 00 02 22 0a
+			15 00 02 31 00
+			15 00 02 53 7d
+			15 00 02 55 8f
+			15 00 02 40 33
+			15 00 02 50 96
+			15 00 02 51 96
+			15 00 02 60 23
+			15 00 02 a0 08
+			15 00 02 a1 1d
+			15 00 02 a2 2a
+			15 00 02 a3 10
+			15 00 02 a4 15
+			15 00 02 a5 28
+			15 00 02 a6 1c
+			15 00 02 a7 1d
+			15 00 02 a8 7e
+			15 00 02 a9 1d
+			15 00 02 aa 29
+			15 00 02 ab 6b
+			15 00 02 ac 1a
+			15 00 02 ad 18
+			15 00 02 ae 4b
+			15 00 02 af 20
+			15 00 02 b0 27
+			15 00 02 b1 50
+			15 00 02 b2 64
+			15 00 02 b3 39
+			15 00 02 c0 08
+			15 00 02 c1 1d
+			15 00 02 c2 2a
+			15 00 02 c3 10
+			15 00 02 c4 15
+			15 00 02 c5 28
+			15 00 02 c6 1c
+			15 00 02 c7 1d
+			15 00 02 c8 7e
+			15 00 02 c9 1d
+			15 00 02 ca 29
+			15 00 02 cb 6b
+			15 00 02 cc 1a
+			15 00 02 cd 18
+			15 00 02 ce 4b
+			15 00 02 cf 20
+			15 00 02 d0 27
+			15 00 02 d1 50
+			15 00 02 d2 64
+			15 00 02 d3 39
+			39 00 04 ff 98 81 00
+			15 00 02 35 01
+			05 78 01 11
+			05 00 01 29
+		];
+
+		display-timings {
+			native-mode = <&rpi_7inch_timing>;
+
+			rpi_7inch_timing: timing0 {
+				clock-frequency = <83330000>;
+				hactive = <720>;
+				hfront-porch = <239>;
+				hsync-len = <33>;
+				hback-porch = <50>;
+				vactive = <1280>;
+				vfront-porch = <20>;
+				vsync-len = <2>;
+				vback-porch = <30>;
+				hsync-active = <0>;
+				vsync-active = <0>;
+				de-active = <0>;
+				pixelclk-active = <0>;
+			};
+		};
+
+		port {
+			panel_in_dsi: endpoint {
+				remote-endpoint = <&dsi_out_panel>;
+			};
+		};
+	};
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@1 {
+			reg = <1>;
+			dsi_out_panel: endpoint {
+				remote-endpoint = <&panel_in_dsi>;
+			};
+		};
+	};
+};
+
+&vp2 {
+	status = "okay";
+};
+
+&dsi_in_vopl {
+	status = "disabled";
+};
+
+&dsi_in_vp2 {
+	status = "okay";
+};
+
+&dsi_in_vp1 {
+	status = "disabled";
+};
+
+&dsi_in_vp0 {
+	status = "disabled";
+};
+
+&route_dsi {
+	status = "disabled";
+	connect = <&vp2_out_dsi>;
+};

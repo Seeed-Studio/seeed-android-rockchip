@@ -1,0 +1,46 @@
+From dff4b8617090f7b9f6024e165ea4e1644917a515 Mon Sep 17 00:00:00 2001
+From: GPenG Chen <302976981@qq.com>
+Date: Thu, 24 Sep 2026 05:58:24 +0000
+Subject: [PATCH 1/2] media: i2c: hook up imx708 sensor driver
+
+The driver source, its DTS and the kernel config fragment are carried as
+new files by the seeed-android-rockchip overlay (vendor-side/TREE/) and
+installed as untracked files by its setup.sh.
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>
+Change-Id: I9b6d7ea48d44243b7a2338949ddf848fbe248a15
+---
+ drivers/media/i2c/Kconfig  | 7 +++++++
+ drivers/media/i2c/Makefile | 1 +
+ 2 files changed, 8 insertions(+)
+
+diff --git a/drivers/media/i2c/Kconfig b/drivers/media/i2c/Kconfig
+index e2c726da547b..3d2968e6d49c 100644
+--- a/drivers/media/i2c/Kconfig
++++ b/drivers/media/i2c/Kconfig
+@@ -952,6 +952,13 @@ config VIDEO_IMX766
+ 	  To compile this driver as a module, choose M here: the
+ 	  module will be called imx766.
+ 
++config VIDEO_IMX708
++	tristate "Sony IMX708 sensor support"
++	depends on I2C && VIDEO_DEV
++	select MEDIA_CONTROLLER
++	select VIDEO_V4L2_SUBDEV_API
++	select V4L2_FWNODE
++
+ config VIDEO_IMX900
+ 	tristate "Sony IMX900 sensor support"
+ 	depends on I2C && VIDEO_DEV
+diff --git a/drivers/media/i2c/Makefile b/drivers/media/i2c/Makefile
+index 3c78417a6534..7aff18d6941d 100644
+--- a/drivers/media/i2c/Makefile
++++ b/drivers/media/i2c/Makefile
+@@ -114,6 +114,7 @@ obj-$(CONFIG_VIDEO_IMX582) += imx582.o
+ obj-$(CONFIG_VIDEO_IMX586) += imx586.o
+ obj-$(CONFIG_VIDEO_IMX678) += imx678.o
+ obj-$(CONFIG_VIDEO_IMX766) += imx766.o
++obj-$(CONFIG_VIDEO_IMX708) += imx708.o
+ obj-$(CONFIG_VIDEO_IMX900) += imx900.o
+ obj-$(CONFIG_VIDEO_IR_I2C) += ir-kbd-i2c.o
+ obj-$(CONFIG_VIDEO_ISL7998X) += isl7998x.o

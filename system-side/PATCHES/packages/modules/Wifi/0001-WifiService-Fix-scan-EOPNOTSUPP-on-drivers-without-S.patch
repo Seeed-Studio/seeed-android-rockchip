@@ -1,0 +1,51 @@
+From a2090f18bd6dd81fcc7634b314e20dbb8ca81058 Mon Sep 17 00:00:00 2001
+From: GPenG Chen <302976981@qq.com>
+Date: Tue, 29 Sep 2026 07:28:33 +0000
+Subject: [PATCH] WifiService: Fix scan EOPNOTSUPP on drivers without
+ SCAN_RANDOM_MAC_ADDR
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+createWiphyFeatures() used the NL80211_FEATURE_* constants (bit indexes,
+e.g. 29/30) directly as bit masks, so (featureFlags & 29) actually tested
+bits 0/2/3/4. Any driver that sets NL80211_FEATURE_SK_TX_STATUS (bit 0) —
+e.g. the AIC8800 (rwnx) driver on the RK3576 Android 14 BSP kernel 6.1 —
+was misdetected as supporting scan MAC randomization. WifiService then
+sent NL80211_CMD_TRIGGER_SCAN with NL80211_SCAN_FLAG_RANDOM_ADDR, which
+the kernel rejects with -EOPNOTSUPP because the driver never sets
+NL80211_FEATURE_SCAN_RANDOM_MAC_ADDR. As a result every framework scan
+failed and Settings showed no APs, while wpa_cli still worked since
+wpa_supplicant does not request a random scan MAC.
+
+Fix: shift the bit indexes to build the mask before testing. This also
+fixes the same misdetection for scheduled scans (PNO).
+
+Verified on ssi_17_arm64 fusion firmware (a17 system + a14 vendor,
+kernel 6.1.172 + aic8800_fdrv): framework scans now succeed (144
+results), TRIGGER_SCAN no longer carries RANDOM_ADDR and the kernel
+no longer returns error 95.
+
+Change-Id: Iaf6697269820fcc9f4b5827405d03c0bc9df0561
+---
+ .../java/com/android/server/wifi/nl80211/Nl80211Utils.java   | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/service/java/com/android/server/wifi/nl80211/Nl80211Utils.java b/service/java/com/android/server/wifi/nl80211/Nl80211Utils.java
+index c90f275dcd..07a85487f5 100644
+--- a/service/java/com/android/server/wifi/nl80211/Nl80211Utils.java
++++ b/service/java/com/android/server/wifi/nl80211/Nl80211Utils.java
+@@ -2265,10 +2265,11 @@ public class Nl80211Utils {
+     }
+ 
+     private WiphyFeatures createWiphyFeatures(int featureFlags, byte[] extFeatureFlagsBytes) {
++        // NL80211_FEATURE_* constants are bit indexes, shift them to build the mask.
+         boolean supportsRandomMacOneShotScan =
+-                (featureFlags & NL80211_FEATURE_SCAN_RANDOM_MAC_ADDR) != 0;
++                (featureFlags & (1 << NL80211_FEATURE_SCAN_RANDOM_MAC_ADDR)) != 0;
+         boolean supportsRandomMacSchedScan =
+-                (featureFlags & NL80211_FEATURE_SCHED_SCAN_RANDOM_MAC_ADDR) != 0;
++                (featureFlags & (1 << NL80211_FEATURE_SCHED_SCAN_RANDOM_MAC_ADDR)) != 0;
+ 
+         boolean supportsLowSpanOneShotScan = isExtFeatureFlagSet(extFeatureFlagsBytes,
+                 NL80211_EXT_FEATURE_LOW_SPAN_SCAN);

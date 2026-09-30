@@ -1,0 +1,378 @@
+From ef4cc66f36d958ae817af6fe6385d8c351a8f56d Mon Sep 17 00:00:00 2001
+From: GPenG Chen <302976981@qq.com>
+Date: Tue, 29 Sep 2026 07:11:39 +0000
+Subject: [PATCH] audio: tinyalsa_hal: add es8311 sound card support
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The RK3576 board uses an ES8311 codec. The tinyalsa primary HAL did not
+recognize the "rockchipes8311" ALSA card name, so the speaker card number
+stayed -1 (SND_OUT_SOUND_CARD_UNKNOWN) and every playback attempt failed
+with "route_pcm_card_open() card -1 error!" — no sound from the system.
+
+- Register "rockchipes8311" in SPEAKER_OUT_NAME / MIC_IN_NAME so both
+  playback and capture map to the card.
+- Add an es8311 codec route table and register it in config_list.h.
+  The new es8311 driver (kernel-6.1) has no "Playback Path" enum: the
+  codec path is pure DAPM (I2S IN -> MONO DAC -> DIFFERENTIAL OUT) and
+  the PA is enabled by the machine driver's DAPM event, so the table
+  only pins DAC/ADC VOLUME at 0 dB (191 of 0~255).
+
+Change-Id: Iec30157848b80b23257eba0acef8a4d1782a8998
+---
+ tinyalsa_hal/audio_hw.c                   |   2 +
+ tinyalsa_hal/codec_config/config_list.h   |   5 +
+ tinyalsa_hal/codec_config/es8311_config.h | 300 ++++++++++++++++++++++
+ 3 files changed, 307 insertions(+)
+ create mode 100644 tinyalsa_hal/codec_config/es8311_config.h
+
+diff --git a/tinyalsa_hal/audio_hw.c b/tinyalsa_hal/audio_hw.c
+index 9ffb232..abdc0d1 100644
+--- a/tinyalsa_hal/audio_hw.c
++++ b/tinyalsa_hal/audio_hw.c
+@@ -523,6 +523,7 @@ struct dev_proc_info SPEAKER_OUT_NAME[] = /* add codes& dai name here*/
+     {"realtekrt5678co", NULL,},
+     {"rkhdmianalogsnd", NULL,},
+     {"rockchipcx2072x", NULL,},
++    {"rockchipes8311", NULL,},
+     {"rockchipes8316c", NULL,},
+     {"rockchipes8323c", NULL,},
+     {"rockchipes8388c", NULL,},
+@@ -594,6 +595,7 @@ struct dev_proc_info MIC_IN_NAME[] =
+     {"realtekrt5670c", NULL,},
+     {"realtekrt5672c", NULL,},
+     {"realtekrt5678co", NULL,},
++    {"rockchipes8311", NULL,},
+     {"rockchipes8316c", NULL,},
+     {"rockchipes8323c", NULL,},
+     {"rockchipes8388c", NULL,},
+diff --git a/tinyalsa_hal/codec_config/config_list.h b/tinyalsa_hal/codec_config/config_list.h
+index d8e936e..3c273a2 100644
+--- a/tinyalsa_hal/codec_config/config_list.h
++++ b/tinyalsa_hal/codec_config/config_list.h
+@@ -25,6 +25,7 @@
+ #include "wm8960_config.h"
+ #include "es8388_config.h"
+ #include "es8396_config.h"
++#include "es8311_config.h"
+ #include "rt5651_config.h"
+ #include "es8316_config.h"
+ #include "cx2072_config.h"
+@@ -66,6 +67,10 @@ struct alsa_sound_card_config sound_card_config_list[] = {
+         .sound_card_name = "rockchipes8388c",
+         .route_table = &es8388_config_table,
+     },
++    {
++        .sound_card_name = "rockchipes8311",
++        .route_table = &es8311_config_table,
++    },
+     {
+         .sound_card_name = "rockchipes8396c",
+         .route_table = &es8396_config_table,
+diff --git a/tinyalsa_hal/codec_config/es8311_config.h b/tinyalsa_hal/codec_config/es8311_config.h
+new file mode 100644
+index 0000000..6d29c75
+--- /dev/null
++++ b/tinyalsa_hal/codec_config/es8311_config.h
+@@ -0,0 +1,300 @@
++#ifndef _ES8311_CONFIG_H_
++#define _ES8311_CONFIG_H_
++
++#include "config.h"
++
++/*
++ * es8311 codec route table.
++ *
++ * The es8311 driver (kernel-6.1 sound/soc/codecs/es8311.c) uses DAPM for the
++ * codec path (I2S IN -> DAC SDP SRC MUX -> MONO DAC -> DIFFERENTIAL OUT), and
++ * the machine driver (rockchip_multicodecs.c) connects DIFFERENTIAL OUT to the
++ * "Headphone"/"Speaker" pins whose DAPM events toggle the PA GPIO. So the
++ * analog path is powered automatically once the PCM stream opens; this table
++ * only needs to keep the digital volumes at 0 dB (range 0~255, 0 dB == 191).
++ */
++
++const struct config_control es8311_speaker_normal_controls[] = {
++    {
++        .ctl_name = "DAC VOLUME",
++        .int_val = {191, 191},
++    },
++};
++
++const struct config_control es8311_speaker_incall_controls[] = {
++};
++
++const struct config_control es8311_speaker_ringtone_controls[] = {
++};
++
++const struct config_control es8311_speaker_voip_controls[] = {
++};
++
++const struct config_control es8311_earpiece_normal_controls[] = {
++};
++
++const struct config_control es8311_earpiece_incall_controls[] = {
++};
++
++const struct config_control es8311_earpiece_ringtone_controls[] = {
++};
++
++const struct config_control es8311_earpiece_voip_controls[] = {
++};
++
++const struct config_control es8311_headphone_normal_controls[] = {
++    {
++        .ctl_name = "DAC VOLUME",
++        .int_val = {191, 191},
++    },
++};
++
++const struct config_control es8311_headphone_incall_controls[] = {
++};
++
++const struct config_control es8311_headphone_ringtone_controls[] = {
++};
++
++const struct config_control es8311_speaker_headphone_normal_controls[] = {
++};
++
++const struct config_control es8311_speaker_headphone_ringtone_controls[] = {
++};
++
++const struct config_control es8311_headphone_voip_controls[] = {
++};
++
++const struct config_control es8311_headset_normal_controls[] = {
++    {
++        .ctl_name = "DAC VOLUME",
++        .int_val = {191, 191},
++    },
++};
++
++const struct config_control es8311_headset_incall_controls[] = {
++};
++
++const struct config_control es8311_headset_ringtone_controls[] = {
++};
++
++const struct config_control es8311_headset_voip_controls[] = {
++};
++
++const struct config_control es8311_bluetooth_normal_controls[] = {
++};
++
++const struct config_control es8311_bluetooth_incall_controls[] = {
++};
++
++const struct config_control es8311_bluetooth_voip_controls[] = {
++};
++
++const struct config_control es8311_main_mic_capture_controls[] = {
++    {
++        .ctl_name = "ADC VOLUME",
++        .int_val = {191, 191},
++    },
++};
++
++const struct config_control es8311_hands_free_mic_capture_controls[] = {
++};
++
++const struct config_control es8311_bluetooth_sco_mic_capture_controls[] = {
++};
++
++const struct config_control es8311_playback_off_controls[] = {
++};
++
++const struct config_control es8311_capture_off_controls[] = {
++};
++
++const struct config_control es8311_incall_off_controls[] = {
++};
++
++const struct config_control es8311_voip_off_controls[] = {
++};
++
++const struct config_route_table es8311_config_table = {
++    //speaker
++    .speaker_normal = {
++        .sound_card = 0,
++        .devices = DEVICES_0,
++        .controls = es8311_speaker_normal_controls,
++        .controls_count = sizeof(es8311_speaker_normal_controls) / sizeof(struct config_control),
++    },
++    .speaker_incall = {
++        .sound_card = 0,
++        .devices = DEVICES_0,
++        .controls = es8311_speaker_incall_controls,
++        .controls_count = sizeof(es8311_speaker_incall_controls) / sizeof(struct config_control),
++    },
++    .speaker_ringtone = {
++        .sound_card = 0,
++        .devices = DEVICES_0,
++        .controls = es8311_speaker_ringtone_controls,
++        .controls_count = sizeof(es8311_speaker_ringtone_controls) / sizeof(struct config_control),
++    },
++    .speaker_voip = {
++        .sound_card = 0,
++        .devices = DEVICES_0,
++        .controls = es8311_speaker_voip_controls,
++        .controls_count = sizeof(es8311_speaker_voip_controls) / sizeof(struct config_control),
++    },
++
++    //earpiece
++    .earpiece_normal = {
++        .sound_card = 0,
++        .devices = DEVICES_0,
++        .controls = es8311_earpiece_normal_controls,
++        .controls_count = sizeof(es8311_earpiece_normal_controls) / sizeof(struct config_control),
++    },
++    .earpiece_incall = {
++        .sound_card = 0,
++        .devices = DEVICES_0,
++        .controls = es8311_earpiece_incall_controls,
++        .controls_count = sizeof(es8311_earpiece_incall_controls) / sizeof(struct config_control),
++    },
++    .earpiece_ringtone = {
++        .sound_card = 0,
++        .devices = DEVICES_0,
++        .controls = es8311_earpiece_ringtone_controls,
++        .controls_count = sizeof(es8311_earpiece_ringtone_controls) / sizeof(struct config_control),
++    },
++    .earpiece_voip = {
++        .sound_card = 0,
++        .devices = DEVICES_0,
++        .controls = es8311_earpiece_voip_controls,
++        .controls_count = sizeof(es8311_earpiece_voip_controls) / sizeof(struct config_control),
++    },
++
++    //headphone
++    .headphone_normal = {
++        .sound_card = 0,
++        .devices = DEVICES_0,
++        .controls = es8311_headphone_normal_controls,
++        .controls_count = sizeof(es8311_headphone_normal_controls) / sizeof(struct config_control),
++    },
++    .headphone_incall = {
++        .sound_card = 0,
++        .devices = DEVICES_0,
++        .controls = es8311_headphone_incall_controls,
++        .controls_count = sizeof(es8311_headphone_incall_controls) / sizeof(struct config_control),
++    },
++    .headphone_ringtone = {
++        .sound_card = 0,
++        .devices = DEVICES_0,
++        .controls = es8311_headphone_ringtone_controls,
++        .controls_count = sizeof(es8311_headphone_ringtone_controls) / sizeof(struct config_control),
++    },
++    .speaker_headphone_normal = {
++        .sound_card = 0,
++        .devices = DEVICES_0,
++        .controls = es8311_speaker_headphone_normal_controls,
++        .controls_count = sizeof(es8311_speaker_headphone_normal_controls) / sizeof(struct config_control),
++    },
++    .speaker_headphone_ringtone = {
++        .sound_card = 0,
++        .devices = DEVICES_0,
++        .controls = es8311_speaker_headphone_ringtone_controls,
++        .controls_count = sizeof(es8311_speaker_headphone_ringtone_controls) / sizeof(struct config_control),
++    },
++    .headphone_voip = {
++        .sound_card = 0,
++        .devices = DEVICES_0,
++        .controls = es8311_headphone_voip_controls,
++        .controls_count = sizeof(es8311_headphone_voip_controls) / sizeof(struct config_control),
++    },
++
++    //headset
++    .headset_normal = {
++        .sound_card = 0,
++        .devices = DEVICES_0,
++        .controls = es8311_headset_normal_controls,
++        .controls_count = sizeof(es8311_headset_normal_controls) / sizeof(struct config_control),
++    },
++    .headset_incall = {
++        .sound_card = 0,
++        .devices = DEVICES_0,
++        .controls = es8311_headset_incall_controls,
++        .controls_count = sizeof(es8311_headset_incall_controls) / sizeof(struct config_control),
++    },
++    .headset_ringtone = {
++        .sound_card = 0,
++        .devices = DEVICES_0,
++        .controls = es8311_headset_ringtone_controls,
++        .controls_count = sizeof(es8311_headset_ringtone_controls) / sizeof(struct config_control),
++    },
++    .headset_voip = {
++        .sound_card = 0,
++        .devices = DEVICES_0,
++        .controls = es8311_headset_voip_controls,
++        .controls_count = sizeof(es8311_headset_voip_controls) / sizeof(struct config_control),
++    },
++
++    //bluetooth
++    .bluetooth_normal = {
++        .sound_card = 0,
++        .devices = DEVICES_0,
++        .controls = es8311_bluetooth_normal_controls,
++        .controls_count = sizeof(es8311_bluetooth_normal_controls) / sizeof(struct config_control),
++    },
++    .bluetooth_incall = {
++        .sound_card = 0,
++        .devices = DEVICES_0,
++        .controls = es8311_bluetooth_incall_controls,
++        .controls_count = sizeof(es8311_bluetooth_incall_controls) / sizeof(struct config_control),
++    },
++    .bluetooth_voip = {
++        .sound_card = 0,
++        .devices = DEVICES_0,
++        .controls = es8311_bluetooth_voip_controls,
++        .controls_count = sizeof(es8311_bluetooth_voip_controls) / sizeof(struct config_control),
++    },
++
++    //capture
++    .main_mic_capture = {
++        .sound_card = 0,
++        .devices = DEVICES_0,
++        .controls = es8311_main_mic_capture_controls,
++        .controls_count = sizeof(es8311_main_mic_capture_controls) / sizeof(struct config_control),
++    },
++    .hands_free_mic_capture = {
++        .sound_card = 0,
++        .devices = DEVICES_0,
++        .controls = es8311_hands_free_mic_capture_controls,
++        .controls_count = sizeof(es8311_hands_free_mic_capture_controls) / sizeof(struct config_control),
++    },
++    .bluetooth_sco_mic_capture = {
++        .sound_card = 0,
++        .devices = DEVICES_0,
++        .controls = es8311_bluetooth_sco_mic_capture_controls,
++        .controls_count = sizeof(es8311_bluetooth_sco_mic_capture_controls) / sizeof(struct config_control),
++    },
++
++    .playback_off = {
++        .sound_card = 0,
++        .devices = DEVICES_0,
++        .controls = es8311_playback_off_controls,
++        .controls_count = sizeof(es8311_playback_off_controls) / sizeof(struct config_control),
++    },
++    .capture_off = {
++        .sound_card = 0,
++        .devices = DEVICES_0,
++        .controls = es8311_capture_off_controls,
++        .controls_count = sizeof(es8311_capture_off_controls) / sizeof(struct config_control),
++    },
++    .incall_off = {
++        .sound_card = 0,
++        .devices = DEVICES_0,
++        .controls = es8311_incall_off_controls,
++        .controls_count = sizeof(es8311_incall_off_controls) / sizeof(struct config_control),
++    },
++    .voip_off = {
++        .sound_card = 0,
++        .devices = DEVICES_0,
++        .controls = es8311_voip_off_controls,
++        .controls_count = sizeof(es8311_voip_off_controls) / sizeof(struct config_control),
++    },
++};
++
++#endif //_ES8311_CONFIG_H_
