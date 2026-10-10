@@ -1,0 +1,6 @@
+/vendor/lib(64)?/hw/vulkan.rk3588.so            u:object_r:same_process_hal_file:s0
+
+#for audio
+/dev/spidev0.1   u:object_r:audio_spi_device:s0
+
+/sys/devices/platform/fecc0000.otp/rockchip-otp0/nvmem u:object_r:sysfs_nvmem:s0

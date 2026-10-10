@@ -20,6 +20,13 @@ line is based on it; lunch `rk3576_u-userdebug`), the
 `device/rockchip/rk3588/` equivalents for RK3588: copy, strip what the
 reference board needs but the product does not, then diverge.
 
+The shared RK3576 A14 SDK does not ship `device/rockchip/rk3588`.
+`recomputer_rk3588_devkit/rk3588/` bundles the platform subset from the
+RK3588 SDK, including policies, Bluetooth, overlays and GKI support. Its
+product configuration uses those local files; customers do not need to
+copy a separate RK3588 device repository. See that directory's README for
+the source revision and scope.
+
 ## Fusion constraints (SSI + GRF)
 
 This device tree builds the **vendor half** of a fusion firmware whose system

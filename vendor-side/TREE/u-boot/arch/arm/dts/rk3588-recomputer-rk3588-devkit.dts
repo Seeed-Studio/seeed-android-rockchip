@@ -1,0 +1,58 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2026 Seeed Studio
+ *
+ * U-Boot device tree for the Seeed reComputer rk3588 DevKit.
+ * Minimal board file mirroring rk3588-evb.dts, overriding the two mmc
+ * nodes where the board wiring differs from the EVB (see the node
+ * comments). Selected via CONFIG_DEFAULT_DEVICE_TREE in
+ * vendor-side/TREE/u-boot/configs/recomputer-rk3588-devkit.config.
+ */
+
+/dts-v1/;
+#include "rk3588.dtsi"
+#include "rk3588-u-boot.dtsi"
+#include <dt-bindings/input/input.h>
+
+/ {
+	model = "Seeed Studio reComputer rk3588 DevKit";
+	compatible = "seeed,recomputer-rk3588-devkit", "rockchip,rk3588";
+
+	adc-keys {
+		compatible = "adc-keys";
+		io-channels = <&saradc 1>;
+		io-channel-names = "buttons";
+		keyup-threshold-microvolt = <1800000>;
+		u-boot,dm-pre-reloc;
+		status = "okay";
+
+		volumeup-key {
+			u-boot,dm-pre-reloc;
+			linux,code = <KEY_VOLUMEUP>;
+			label = "volume up";
+			press-threshold-microvolt = <1750>;
+		};
+	};
+};
+
+&sdmmc {
+	/*
+	 * The devkit wires card detect to the SoC's dedicated sdmmc_det pad
+	 * (already in pinctrl-0 from rk3588s.dtsi). The EVB's cd-gpios
+	 * (GPIO0_A4) is not connected here — with it, SPL reports
+	 * "MMC: no card present" even with a card inserted.
+	 */
+	/delete-property/ cd-gpios;
+};
+
+&sdhci {
+	/*
+	 * Board wiring is validated for HS200 only (the kernel DTS sets
+	 * mmc-hs200-1_8v for the same reason). The EVB dtsi requests HS400
+	 * enhanced strobe — on this board every read times out
+	 * ("MMC error: The cmd index is 17, ret is -110").
+	 */
+	/delete-property/ mmc-hs400-1_8v;
+	/delete-property/ mmc-hs400-enhanced-strobe;
+	mmc-hs200-1_8v;
+};

@@ -1,10 +1,11 @@
 # system-side/device/seeed/
 
-> Status: not derived yet — no system-side code has been modified so far,
-> and builds use the stock RK SSI target (`ssi_17_arm64-cp2a-userdebug`)
-> directly. Populate this directory when the first system-side
-> customization actually lands; until then the fusion firmware is
-> stock-SSI + Seeed vendor side.
+> Status: deriving started — `recomputer_rk3588_ssi/` is the first product
+> SSI config (enabled `BOARD_HDMI_IN_SUPPORT` for the RK3588 HDMI-RX
+> input; vendor-side counterpart in
+> `vendor-side/device/seeed/recomputer_rk3588_devkit/`). Products without
+> system-side customization (e.g. RK3576) keep using the stock RK target
+> `ssi_17_arm64-cp2a-userdebug` directly.
 
 Product SSI configuration, installed into the **A17 SSI SDK** tree. One
 subdirectory per product, e.g. `device/seeed/<product>_ssi/`:

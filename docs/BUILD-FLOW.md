@@ -15,7 +15,7 @@ authoritative if anything here drifts.
 │   lunch <SYSTEM_LUNCH>              │
 │   make dist -j$(nproc)              │
 │ produces TWO fusion inputs:         │
-│   out/dist/ssi_17_arm64-target_files-*.zip        (framework target-files)
+│   out/dist/<system-product>-target_files-*.zip   (framework target-files)
 │   out/host/linux-x86/bin/merge_target_files       (merge tool, -M)
 └──────────────────┬──────────────────┘
                    │  -T (zip)   -M (merge tool)
@@ -41,10 +41,12 @@ authoritative if anything here drifts.
 ```bash
 cd <a17-tree>
 source build/envsetup.sh
-lunch <SYSTEM_LUNCH>          # stock RK SSI target for now (see BASE_SDK);
-                              # becomes the product SSI config once derived
+lunch <SYSTEM_LUNCH>          # product SSI config installed by this overlay
+                              # (see BASE_SDK; e.g. recomputer_rk3588_ssi.
+                              # Products without system-side customization
+                              # use the stock ssi_17_arm64 target.)
 make dist -j$(nproc)
-# -> out/dist/ssi_17_arm64-target_files-<date>.zip
+# -> out/dist/<system-product>-target_files-<date>.zip
 # -> out/host/linux-x86/bin/merge_target_files
 ```
 
@@ -76,7 +78,7 @@ source build/envsetup.sh
 lunch <VENDOR_LUNCH>          # product device tree installed by this overlay
 ./build.sh -AKUu \
     -M <a17-tree>/out/host/linux-x86/bin/merge_target_files \
-    -T <a17-tree>/out/dist/ssi_17_arm64-target_files-<date>.zip
+    -T <a17-tree>/out/dist/<system-product>-target_files-<date>.zip
 #          │  │  ││
 #          │  │  ││ └─ update.img packing
 #          │  │  │└── OTA package / vendor target-files

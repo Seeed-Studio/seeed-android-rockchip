@@ -587,9 +587,10 @@ fi
 if [[ "$WANT_SYSTEM" == 1 ]]; then
     lt="$(base_sdk_value "$(side_lunch_key system)")"
     [[ "$lt" == "<fill-in"* ]] && lt=""
+    prod="${lt%%-*}"   # product name = lunch target before the first '-'
     echo "  # system side (A17 SSI):"
     echo "  cd ${SDK_DIR[system]} && source build/envsetup.sh && lunch ${lt:-<system-lunch-target>} && make dist -j\$(nproc)"
     echo "  # then fuse (in the vendor shell above): ./build.sh -AKUu \\"
     echo "  #      -M ${SDK_DIR[system]}/out/host/linux-x86/bin/merge_target_files \\"
-    echo "  #      -T ${SDK_DIR[system]}/out/dist/ssi_17_arm64-target_files-*.zip   (see docs/BUILD-FLOW.md)"
+    echo "  #      -T ${SDK_DIR[system]}/out/dist/${prod:-<product>}-target_files-*.zip   (see docs/BUILD-FLOW.md)"
 fi
