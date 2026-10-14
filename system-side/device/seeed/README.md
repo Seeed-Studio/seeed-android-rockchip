@@ -3,9 +3,12 @@
 > Status: deriving started — `recomputer_rk3588_ssi/` is the first product
 > SSI config (enabled `BOARD_HDMI_IN_SUPPORT` for the RK3588 HDMI-RX
 > input; vendor-side counterpart in
-> `vendor-side/device/seeed/recomputer_rk3588_devkit/`). Products without
-> system-side customization (e.g. RK3576) keep using the stock RK target
-> `ssi_17_arm64-cp2a-userdebug` directly.
+> `vendor-side/device/seeed/recomputer_rk3588_devkit/`).
+> `recomputer_rk3576_ssi/` is the RK3576 counterpart: identical to the
+> stock skeleton apart from product identity — RK3576 needs no
+> system-side customization yet, so it is a drop-in replacement for the
+> stock target `ssi_17_arm64-cp2a-userdebug` (vendor-side counterpart in
+> `vendor-side/device/seeed/recomputer_rk3576_devkit/`).
 
 Product SSI configuration, installed into the **A17 SSI SDK** tree. One
 subdirectory per product, e.g. `device/seeed/<product>_ssi/`:
