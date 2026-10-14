@@ -10,8 +10,8 @@ fusion of two Rockchip SDKs:
 
 - **system side — A17 SSI SDK**: framework / system image (`ssi_17_arm64`,
   Android 17)
-- **vendor side — A14 SDK**: u-boot, `kernel-6.1`, `vendor/`, RK3576 device
-  tree (GRF, vendor API frozen at A14)
+- **vendor side — A14 SDK**: u-boot, `kernel-6.1`, `vendor/`, RK3576 / RK3588 device
+  trees (GRF, vendor API frozen at A14)
 
 Both SDKs are obtained from Rockchip; this overlay is applied on top of both
 with a single command, and the two sides are then fused (see
@@ -44,6 +44,12 @@ with a single command, and the two sides are then fused (see
 - `git`, `repo`, `rsync`, and a configured git identity
   (`user.name` / `user.email` — the patch step uses `git am`).
 
+## Build and flash
+
+- [Build guide](docs/BUILD-FLOW.md): complete commands for `recomputer_rk3576_devkit` and `recomputer_rk3588_devkit`, fusion flow and output paths.
+- [Flashing guide](docs/FLASHING.md): Windows SD boot cards, RK3576 NOR preparation for SD boot, Linux / Windows eMMC flashing, and the required NOR Flash erase before eMMC boot.
+- [Bundled flashing tools](tools/flashing/README.md): the four original tool and driver archives and SHA-256 checksums.
+
 ## Quick start
 
 ```bash
@@ -56,9 +62,10 @@ cd seeed-android-rockchip
 ./setup.sh --vendor-sdk /path/a14 --system-sdk /path/a17
 
 # 3. Build both sides and fuse them — see docs/BUILD-FLOW.md:
-#    system side:  lunch <SYSTEM_LUNCH> && make dist   -> SSI target-files zip + merge tool
-#    vendor side:  ./build.sh -AKUu -M <a17>/out/host/linux-x86/bin/merge_target_files \
-#                          -T <a17>/out/dist/ssi_17_arm64-target_files-*.zip
+#    system side:  lunch recomputer_rk3576_ssi-cp2a-userdebug && make dist
+#    RK3588 uses recomputer_rk3588_ssi-cp2a-userdebug; see the full guide.
+#    vendor side:  ./build.sh -AKUou -M <a17>/out/host/linux-x86/bin/merge_target_files \
+#                          -T <a17>/out/dist/<system-product>-target_files-<build>.zip
 ```
 
 `setup.sh` copies (or with `--symlink`, links) each side's overlay

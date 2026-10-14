@@ -1,129 +1,98 @@
-# Fusion build flow (SSI + GRF)
+# Build guide (A17 SSI + A14 GRF fusion)
 
-How the two SDK trees are turned into one firmware. This mirrors RK's
-official guide (`Rockchip_Developer_Guide_Android17_SSI_SDK_{CN,EN}.pdf` in
-the A17 SDK's `RKDocs/android/`, §4.4.6 "Method 2" — fusion build from the
-vendor SDK) — that document is
-authoritative if anything here drifts.
+English | [简体中文](BUILD-FLOW_zh.md)
 
-## Overview
+Both boards share the A14 vendor SDK and A17 system SDK pinned in [BASE_SDK](../BASE_SDK), with separate product configurations. Build A17 first, then build and fuse on A14 to produce `update.img`. No compilation was performed for this documentation update.
 
+## 1. Prepare SDKs and overlay
+
+Obtain both matching SDK snapshots, install the standard AOSP Linux build dependencies, and reserve approximately 600 GB for the two trees. Install `git`, `repo`, `rsync`, `unzip`, and configure Git user name/email. Follow the SDK's Rockchip build guide for host package requirements.
+
+Example directory layout:
+
+```text
+/path/work/
+├── a14/
+├── a17/
+└── seeed-android-rockchip/
 ```
-┌─────────────────────────────────────┐
-│ system side (A17 SSI SDK)           │
-│   source build/envsetup.sh          │
-│   lunch <SYSTEM_LUNCH>              │
-│   make dist -j$(nproc)              │
-│ produces TWO fusion inputs:         │
-│   out/dist/<system-product>-target_files-*.zip   (framework target-files)
-│   out/host/linux-x86/bin/merge_target_files       (merge tool, -M)
-└──────────────────┬──────────────────┘
-                   │  -T (zip)   -M (merge tool)
-                   ▼
-┌─────────────────────────────────────┐
-│ vendor side (A14 SDK)               │
-│   source build/envsetup.sh          │
-│   lunch <VENDOR_LUNCH>              │
-│   ./build.sh -AKUu -M <tool> -T <zip>    │
-│   1. extract_ssi_config             │
-│   2. make installclean + make -j    │
-│   3. make dist  (vendor target-files)    │
-│   4. rk_merge_target_files (fuse)   │
-│ outputs: rockdev/Image-<product>/    │
-│   *-target-files-merged.zip,         │
-│   *-images-merged-fastboot.zip,      │
-│   super.img, update.img              │
-└─────────────────────────────────────┘
-```
-
-## Phase 1 — system side (A17 SSI)
 
 ```bash
-cd <a17-tree>
+cd /path/work/seeed-android-rockchip
+./setup.sh --vendor-sdk /path/work/a14 --system-sdk /path/work/a17
+```
+
+## 2. Choose a board
+
+| Board | A17 lunch | A14 lunch | A14 firmware directory |
+|---|---|---|---|
+| `recomputer_rk3576_devkit` | `recomputer_rk3576_ssi-cp2a-userdebug` | `recomputer_rk3576_devkit-userdebug` | `rockdev/Image-recomputer_rk3576_devkit/` |
+| `recomputer_rk3588_devkit` | `recomputer_rk3588_ssi-cp2a-userdebug` | `recomputer_rk3588_devkit-userdebug` | `rockdev/Image-recomputer_rk3588_devkit/` |
+
+## 3. reComputer RK3576 DevKit
+
+Build the A17 system in the first terminal:
+
+```bash
+cd /path/work/a17
 source build/envsetup.sh
-lunch <SYSTEM_LUNCH>          # product SSI config installed by this overlay
-                              # (see BASE_SDK; e.g. recomputer_rk3588_ssi.
-                              # Products without system-side customization
-                              # use the stock ssi_17_arm64 target.)
+lunch recomputer_rk3576_ssi-cp2a-userdebug
 make dist -j$(nproc)
-# -> out/dist/<system-product>-target_files-<date>.zip
-# -> out/host/linux-x86/bin/merge_target_files
 ```
 
-The SSI side does **not** produce `update.img` — final image packing happens
-on the vendor side.
-
-> Note on `-M`: RK's guide quotes the merge tool as
-> `build/make/tools/releasetools/merge/merge_target_files`, but that
-> directory ships **Python source** (`merge_target_files.py` + `Android.bp`).
-> The Soong-built host binary lands in `out/host/linux-x86/bin/` — that is
-> the path that actually works with `build.sh -M` (verified on this SDK
-> drop). RK's prebuilt drops (guide "Option B") ship the binary under the doc's path,
-> which is where the discrepancy comes from.
-
-What ends up in the SSI is controlled by the product config in
-`system-side/device/seeed/` (derived from
-`device/rockchip/rockchip_generic/ssi_17_arm64`).
-
-## Phase 2 — vendor side (A14 GRF) and fusion
-
-`build.sh` is a one-key script that drives the vendor build itself, but it
-runs on top of a chosen lunch environment — set it first (see
-`RK3576_Developer_Guide_Android14_SDK_EN.pdf` in the A14 SDK's
-`RKDocs/android/`, "Code compiling"):
+After success, build and fuse the A14 vendor in a second terminal. Replace `SSI_TARGET_FILES` with the exact file produced by this A17 build; do not pass a wildcard or use the other board's artifact:
 
 ```bash
-cd <a14-tree>
+cd /path/work/a14
 source build/envsetup.sh
-lunch <VENDOR_LUNCH>          # product device tree installed by this overlay
-./build.sh -AKUu \
-    -M <a17-tree>/out/host/linux-x86/bin/merge_target_files \
-    -T <a17-tree>/out/dist/<system-product>-target_files-<date>.zip
-#          │  │  ││
-#          │  │  ││ └─ update.img packing
-#          │  │  │└── OTA package / vendor target-files
-#          │  │  └─── u-boot
-#          │  └────── kernel
-#          └───────── android (vendor side)
+lunch recomputer_rk3576_devkit-userdebug
+SSI_TARGET_FILES="/path/work/a17/out/dist/recomputer_rk3576_ssi-target_files-<build>.zip"
+./build.sh -AKUou \
+    -M /path/work/a17/out/host/linux-x86/bin/merge_target_files \
+    -T "$SSI_TARGET_FILES"
 ```
 
-`build.sh` at the tree root is a symlink to
-`device/rockchip/common/build/rockchip/build.sh` — the `-M`/`-T` fusion
-support is **stock Rockchip content** in the `device/rockchip/common` repo,
-so customers get it with the SDK; this overlay needs no patch for it.
-(Verify the symlink target on SDK rebases.)
+## 4. reComputer RK3588 DevKit
 
-With `-M` and `-T` present, build.sh automatically:
+Build the A17 system in the first terminal:
 
-1. `extract_ssi_config` — pulls AVB / super partition size / GKI /
-   shipping API level / 64-bit-only out of the A17 target-files and applies
-   them as overrides to the A14 vendor build configuration
-2. `make installclean` + `make -j` — rebuilds vendor with the aligned config
-3. `make dist` — produces the vendor target-files
-4. `rk_merge_target_files` — fuses A17 framework + A14 vendor target-files:
-   rebuilds `super.img` with `lpmake`, emits
-   `*-target-files-merged.zip` and `*-images-merged-fastboot.zip`, and
-   extracts all images to `rockdev/Image-<product>/`
+```bash
+cd /path/work/a17
+source build/envsetup.sh
+lunch recomputer_rk3588_ssi-cp2a-userdebug
+make dist -j$(nproc)
+```
 
-Note: `-M` and `-T` require `-o` (OTA/target-files mode) per build.sh usage.
+After success, build and fuse the A14 vendor in a second terminal. Replace `SSI_TARGET_FILES` with the exact file produced by this A17 build; do not pass a wildcard or use the other board's artifact:
 
-## Rules
+```bash
+cd /path/work/a14
+source build/envsetup.sh
+lunch recomputer_rk3588_devkit-userdebug
+SSI_TARGET_FILES="/path/work/a17/out/dist/recomputer_rk3588_ssi-target_files-<build>.zip"
+./build.sh -AKUou \
+    -M /path/work/a17/out/host/linux-x86/bin/merge_target_files \
+    -T "$SSI_TARGET_FILES"
+```
 
-- Vendor-API freeze: the A17 SSI carries `PRODUCT_EXTRA_VNDK_VERSIONS := 34`
-  (GRF for A14 vendor). Any vendor-side change that bumps the vendor API or
-  VINTF manifest version breaks the fusion contract — test the fusion after
-  any interface-touching change.
-- Both sides' inputs must come from the same overlay tag + the SDK snapshots
-  in `BASE_SDK`. Mixing sides from different tags is unsupported.
+## 5. Flags and outputs
 
-## Alternatives (reference)
+`-A` builds Android vendor, `-K` the kernel, `-U` U-Boot, `-o` OTA / vendor target-files, and `-u` packs `update.img`. Fusion needs `-o`; omitting it can leave vendor target-files missing or reuse stale artifacts.
 
-- RK's guide also documents "Method 1": drive **both** trees from the A17 side
-  with `rkbuild` (`device/rockchip/rockchip_generic/tools/rkbuild.py`:
-  `rkbuild_setup` links the Vendor SDK, `rkbuild_build all -p` builds
-  ssi/vendor/kernel/uboot and packs `update.img` under the A17 tree's
-  `rockdev/Image-<product>/`). Same artifacts, different driver — the
-  overlay does not depend on which one you use.
-- "Option B" in the guide (prebuilt framework files from RK's internal server)
-  is an internal-only shortcut; the open-source flow is always "Option A"
-  (build the SSI yourself).
+`-M` is the A17-built host executable, not the source `merge_target_files.py`. `-T` is the matching board's A17 target-files ZIP. A17 alone does not produce the final `update.img`.
+
+The A14 script extracts SSI configuration, builds vendor and vendor target-files, runs `rk_merge_target_files` to fuse framework and vendor, then packs firmware. Outputs are in the board directory listed above:
+
+- `update.img`: complete firmware for SDDiskTool and upgrade_tool.
+- `MiniLoaderAll.bin`: the matching board's USB download Loader for NOR erasing and storage selection.
+- `super.img`, `*-target-files-merged.zip`, `*-images-merged-fastboot.zip`: fusion outputs.
+
+Use the same overlay version and pinned SDKs for both sides. Never mix RK3576 and RK3588 Loaders or images. When switching boards, lunch the corresponding products again and retain each board's A17 target-files separately. The RK3588 SSI enables HDMI-RX and should use its own SSI product.
+
+## 6. Flashing and references
+
+Continue with [SD / eMMC flashing](FLASHING.md). **Erase NOR Flash before booting from eMMC.**
+
+Implementation references: A14 `device/rockchip/common/build/rockchip/build.sh` and `mkimage.sh`; A17 `RKDocs/android/Rockchip_Developer_Guide_Android17_SSI_SDK_{CN,EN}.pdf` §4.4.6 Method 2. Rockchip also documents driving both builds from A17 using `rkbuild` (Method 1); this guide uses vendor-driven fusion.
+
+The A17 SSI keeps `PRODUCT_EXTRA_VNDK_VERSIONS := 34` for the A14 vendor API freeze. Revalidate fusion after vendor API / VINTF interface changes.

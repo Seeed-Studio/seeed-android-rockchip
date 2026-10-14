@@ -9,7 +9,7 @@
 
 - **system 侧 —— A17 SSI SDK**:framework / system 镜像(`ssi_17_arm64`,
   Android 17)
-- **vendor 侧 —— A14 SDK**:u-boot、`kernel-6.1`、`vendor/`、RK3576 设备树
+- **vendor 侧 —— A14 SDK**:u-boot、`kernel-6.1`、`vendor/`、RK3576 / RK3588 设备树
   (GRF,vendor API 冻结在 A14)
 
 两个 SDK 均需向 Rockchip 获取;本 overlay 通过一条命令叠加到两棵 SDK 树上,
@@ -40,6 +40,12 @@
 - `git`、`repo`、`rsync`,以及已配置的 git 身份
   (`user.name` / `user.email` —— 补丁步骤依赖 `git am`)。
 
+## 编译与烧录
+
+- [编译说明](docs/BUILD-FLOW_zh.md)：`recomputer_rk3576_devkit` 与 `recomputer_rk3588_devkit` 的完整命令、融合流程和产物路径。
+- [烧录说明](docs/FLASHING_zh.md)：Windows SD 启动卡、RK3576 的 NOR SD 引导准备、Linux / Windows eMMC 烧录，以及烧录 eMMC 前必须完成的 NOR Flash 清空步骤。
+- [随仓库提供的烧录工具](tools/flashing/README.md)：四个工具与驱动的原始压缩包与 SHA-256 校验值。
+
 ## 快速开始
 
 ```bash
@@ -52,9 +58,10 @@ cd seeed-android-rockchip
 ./setup.sh --vendor-sdk /path/a14 --system-sdk /path/a17
 
 # 3. 构建两侧并融合 —— 见 docs/BUILD-FLOW.md:
-#    system 侧:  lunch <SYSTEM_LUNCH> && make dist   -> SSI target-files zip + 融合工具
-#    vendor 侧:  ./build.sh -AKUu -M <a17>/out/host/linux-x86/bin/merge_target_files \
-#                          -T <a17>/out/dist/ssi_17_arm64-target_files-*.zip
+#    system 侧:  lunch recomputer_rk3576_ssi-cp2a-userdebug && make dist
+#    RK3588 使用 recomputer_rk3588_ssi-cp2a-userdebug；完整命令见编译说明。
+#    vendor 侧:  ./build.sh -AKUou -M <a17>/out/host/linux-x86/bin/merge_target_files \
+#                          -T <a17>/out/dist/<system-product>-target_files-<build>.zip
 ```
 
 `setup.sh` 把每侧的 overlay 目录拷贝(或加 `--symlink` 以软链方式)进对应 SDK

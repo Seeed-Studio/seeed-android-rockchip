@@ -3,7 +3,7 @@
 # The product firmware is an SSI + GRF fusion build:
 #   system side = A17 SSI SDK  -> framework target-files (ssi_17_arm64)
 #   vendor side = A14 SDK      -> u-boot, kernel-6.1, vendor/, device tree
-# fused by the vendor side's `build.sh -AKUu -M <merge_tool> -T <target_files>`
+# fused by the vendor side's `build.sh -AKUou -M <merge_tool> -T <target_files>`
 # (see docs/BUILD-FLOW.md).
 #
 # setup.sh cross-checks the manifest SHAs automatically; the rest is your
@@ -24,7 +24,8 @@ VENDOR_SDK_DATE=2026-08-07
 VENDOR_MANIFEST_SHA=7bf39f8d3a63c87c24faf0198c4400e0a94f3590
 # Lunch target the overlay installs on the vendor side.
 # Ported from reference product rk3576_u (device/rockchip/rk3576/rk3576_u).
-VENDOR_LUNCH=rk3576_u-userdebug
+VENDOR_LUNCH=recomputer_rk3576_devkit-userdebug
+# RK3588: recomputer_rk3588_devkit-userdebug
 
 # ----- system side (A17, SSI: framework / system image) -----
 # Ask Rockchip for: Android 17 SSI SDK, manifest branch "master",
@@ -36,8 +37,6 @@ SSI_VARIANT=ssi_17_arm64
 SYSTEM_SDK_DATE=2026-08-07
 # git -C <a17>/.repo/manifests rev-parse HEAD
 SYSTEM_MANIFEST_SHA=bee358da747176a305e4c1846e1ed51a6abee667
-# Lunch target for the system side. NOT installed by this overlay (yet):
-# no system-side code is modified so far, so builds use the stock RK SSI
-# target. Replace with the product SSI config (e.g. recomputer_rk3576_ssi)
-# when the first system-side customization lands.
-SYSTEM_LUNCH=ssi_17_arm64-cp2a-userdebug
+# Default product SSI target installed by this overlay.
+# RK3588: recomputer_rk3588_ssi-cp2a-userdebug
+SYSTEM_LUNCH=recomputer_rk3576_ssi-cp2a-userdebug
