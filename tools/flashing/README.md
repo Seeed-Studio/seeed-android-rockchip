@@ -28,3 +28,8 @@ RK3576 SD boot additionally requires the prebuilt Loader and NOR idblock in
 [rk3576-sd-boot/](rk3576-sd-boot/README.md), with a separate checksum list.
 These files enable SD boot for the board's `FSPI0 -> UFS -> USB` boot mode;
 see the flashing guide before switching between SD and eMMC boot.
+
+USB-to-SD flashing Loaders for both RK3576 and RK3588 are included in
+[sd-loaders/](sd-loaders/README.md), with a separate checksum list. After entering
+Maskrom, download the matching Loader with `db` to write firmware directly to the
+SD card installed in the board. See the flashing guide for the exact procedure.

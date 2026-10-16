@@ -13,6 +13,9 @@ or obtain matching prebuilt firmware.
 | RK3576 | `a14/rockdev/Image-recomputer_rk3576_devkit/update.img` | `MiniLoaderAll.bin` in the same directory |
 | RK3588 | `a14/rockdev/Image-recomputer_rk3588_devkit/update.img` | `MiniLoaderAll.bin` in the same directory |
 
+The table’s `MiniLoaderAll.bin` is used by the eMMC/NOR procedure below.
+Direct USB-to-SD flashing requires the dedicated Loaders in §2.2.
+
 Original archives are bundled in [tools/flashing/](../tools/flashing/README.md),
 with SHA-256 checksums. Their SDK source paths are:
 
@@ -106,12 +109,76 @@ power on normally. Check boot output. **Keep this image in NOR for SD boot;
 erase NOR using §4 when switching to eMMC boot.** Reinstall the NOR boot image
 when switching back from eMMC to SD.
 
+## 2.2 Flash the onboard SD card directly over USB (RK3576 / RK3588)
+
+As an alternative to a card reader and SDDiskTool, insert the SD card into the
+board, enter Maskrom, download the dedicated Loader with `db`, then flash the
+matching board's `update.img` directly to that SD card.
+
+| Board | SD flashing Loader |
+|---|---|
+| `recomputer_rk3576_devkit` | [rk3576_loader_tf_usbplug.bin](../tools/flashing/sd-loaders/rk3576_loader_tf_usbplug.bin) |
+| `recomputer_rk3588_devkit` | [rk3588_MiniLoaderAll.bin](../tools/flashing/sd-loaders/rk3588_MiniLoaderAll.bin) |
+
+Both files are bundled in [tools/flashing/sd-loaders/](../tools/flashing/sd-loaders/README.md).
+The RK3576 file is the updated SD flashing version. The earlier NOR-operation
+Loader in §2.1 is retained as `rk3576_loader_src_usbplug.bin` for the NOR boot
+preparation procedure.
+
+1. Back up the SD card, power off the board and insert the target card into its slot.
+2. Connect USB OTG and hold **BOOT** while applying power to enter Maskrom.
+   Install Rockusb drivers first on Windows. Keep the SD card inserted for this
+   procedure; the card-removal instruction for eMMC/NOR operations does not apply.
+3. From the extracted upgrade_tool directory, run the commands below. After `db`
+   succeeds, verify that `rfi` reports the target SD card's capacity before `uf`.
+   These dedicated Loaders provide access to SD; do not switch to EMMC or SPINOR
+   as in the eMMC procedure. Stop if capacity differs or the target is uncertain.
+
+Linux (RK3576 example):
+
+```bash
+SD_LOADER_DIR=/absolute/path/seeed-android-rockchip/tools/flashing/sd-loaders
+IMAGE=/absolute/path/a14/rockdev/Image-recomputer_rk3576_devkit/update.img
+sudo ./upgrade_tool ld
+sudo ./upgrade_tool db "$SD_LOADER_DIR/rk3576_loader_tf_usbplug.bin"
+sudo ./upgrade_tool rfi
+# Verify the target SD card capacity before continuing
+sudo ./upgrade_tool uf "$IMAGE" -noreset
+# Reset only after upgrade success
+sudo ./upgrade_tool rd
+```
+
+Windows PowerShell (RK3576 example):
+
+```powershell
+$SdLoaderDir = 'C:\path\seeed-android-rockchip\tools\flashing\sd-loaders'
+$Image = 'C:\firmware\recomputer_rk3576_devkit\update.img'
+.\upgrade_tool.exe ld
+.\upgrade_tool.exe db "$SdLoaderDir\rk3576_loader_tf_usbplug.bin"
+.\upgrade_tool.exe rfi
+# Verify the target SD card capacity before continuing
+.\upgrade_tool.exe uf "$Image" -noreset
+# Reset only after upgrade success
+.\upgrade_tool.exe rd
+```
+
+**RK3588:** use `rk3588_MiniLoaderAll.bin` in the `db` command and
+`Image-recomputer_rk3588_devkit/update.img` as firmware (the matching RK3588
+firmware directory on Windows). Other steps are the same.
+
+`db` loads the Loader into RAM; it does not write the SD card or install persistent
+boot support. After successful flashing, power-cycle normally with BOOT released.
+**RK3576 still requires NOR boot preparation in §2.1 to boot from SD.** If NOR
+preparation is needed, remove the card and re-enter Maskrom with the NOR Loader
+specified in §2.1. Never interchange the two boards' Loaders.
+
 ## 3. Prepare USB flashing: enter Maskrom
 
 **Erase onboard NOR Flash before booting the flashed eMMC. Reflashing eMMC
 alone does not remove the old NOR bootloader.**
 
-1. Power off and remove the SD card. Connect the board's USB OTG port to the host
+1. For eMMC/NOR operations, power off and remove the SD card (keep the target
+   SD card inserted for direct SD flashing in §2.2). Connect the board's USB OTG port to the host
    with a data-capable cable.
 2. Hold the button labeled **BOOT** (used to enter Maskrom mode), apply board power, then release the button.
    Locate the port/button using the markings for your hardware revision;

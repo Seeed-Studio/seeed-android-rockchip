@@ -11,6 +11,8 @@
 | RK3576 | `a14/rockdev/Image-recomputer_rk3576_devkit/update.img` | 同目录 `MiniLoaderAll.bin` |
 | RK3588 | `a14/rockdev/Image-recomputer_rk3588_devkit/update.img` | 同目录 `MiniLoaderAll.bin` |
 
+上表的 `MiniLoaderAll.bin` 用于后文 eMMC / NOR 流程；经 USB 直烧 SD 卡须使用第 2.2 节指定的专用 Loader。
+
 以下工具已原样收录在 [tools/flashing/](../tools/flashing/README.md)，也可从 SDK 原路径获取：
 
 | 用途 | SDK 原路径 |
@@ -79,11 +81,58 @@ $SdBootDir = 'C:\path\seeed-android-rockchip\tools\flashing\rk3576-sd-boot'
 
 成功后断电，插入第 2 节制作好的 SD 卡，松开 BOOT 键，正常上电并检查启动输出。**SD 启动时保留 NOR 内的此引导镜像；切换到 eMMC 启动时再按第 4 节清空 NOR。** 从 eMMC 切回 SD 时，需要重新写入此 NOR 引导镜像。
 
+## 2.2 通过 USB 直接烧录板上 SD 卡（RK3576 / RK3588）
+
+除使用读卡器和 SDDiskTool 外，也可将 SD 卡插在开发板上，进入 Maskrom，通过 `db` 下载下面的专用 Loader，然后直接烧录对应开发板的 `update.img` 到 SD 卡。
+
+| 开发板 | SD 直烧 Loader |
+|---|---|
+| `recomputer_rk3576_devkit` | [rk3576_loader_tf_usbplug.bin](../tools/flashing/sd-loaders/rk3576_loader_tf_usbplug.bin) |
+| `recomputer_rk3588_devkit` | [rk3588_MiniLoaderAll.bin](../tools/flashing/sd-loaders/rk3588_MiniLoaderAll.bin) |
+
+这些 Loader 已收入 [tools/flashing/sd-loaders/](../tools/flashing/sd-loaders/README.md)。其中 RK3576 文件是更新后的 SD 直烧版本；第 2.1 节的 NOR 操作 Loader 保持原名 `rk3576_loader_src_usbplug.bin`，用于原 NOR 引导写入流程。
+
+1. 备份 SD 卡数据，开发板断电，将目标 SD 卡插入板上卡槽。
+2. 连接 USB OTG，按住 **BOOT** 键上电进入 Maskrom；Windows 先安装 Rockusb 驱动。此流程中 SD 卡应保持插入，不使用第 3 节 eMMC / NOR 操作时取卡的要求。
+3. 进入已解压的 upgrade_tool 目录，使用下列命令。下载成功后，先确认 `rfi` 显示的存储容量与目标 SD 卡一致，再执行 `uf`。此处依靠专用 Loader 访问 SD 卡，不要套用 eMMC 流程切换到 EMMC 或 SPINOR；容量不符或无法确认目标时停止烧录。
+
+Linux（示例为 RK3576）：
+
+```bash
+SD_LOADER_DIR=/absolute/path/seeed-android-rockchip/tools/flashing/sd-loaders
+IMAGE=/absolute/path/a14/rockdev/Image-recomputer_rk3576_devkit/update.img
+sudo ./upgrade_tool ld
+sudo ./upgrade_tool db "$SD_LOADER_DIR/rk3576_loader_tf_usbplug.bin"
+sudo ./upgrade_tool rfi
+# 确认目标 SD 卡容量后才执行
+sudo ./upgrade_tool uf "$IMAGE" -noreset
+# 等待升级成功后重启
+sudo ./upgrade_tool rd
+```
+
+Windows PowerShell（示例为 RK3576）：
+
+```powershell
+$SdLoaderDir = 'C:\path\seeed-android-rockchip\tools\flashing\sd-loaders'
+$Image = 'C:\firmware\recomputer_rk3576_devkit\update.img'
+.\upgrade_tool.exe ld
+.\upgrade_tool.exe db "$SdLoaderDir\rk3576_loader_tf_usbplug.bin"
+.\upgrade_tool.exe rfi
+# 确认目标 SD 卡容量后才执行
+.\upgrade_tool.exe uf "$Image" -noreset
+# 等待升级成功后重启
+.\upgrade_tool.exe rd
+```
+
+**RK3588：** 将上述 `db` 文件改为 `rk3588_MiniLoaderAll.bin`，固件路径改为 `Image-recomputer_rk3588_devkit/update.img`（Windows 使用对应 RK3588 固件目录），其余步骤相同。
+
+`db` 只将 Loader 下载到 RAM，本身不写入 SD 卡，也不替代持久化启动引导。烧录成功后正常断电再上电，松开 BOOT 键；**RK3576 仍需完成第 2.1 节的 NOR 引导准备，才能从 SD 卡启动。** 若需要准备 NOR，应先取出 SD 卡并重新进入 Maskrom，使用第 2.1 节的 NOR Loader。两个板卡的 Loader 不可混用。
+
 ## 3. USB 烧录准备：进入 Maskrom
 
 **eMMC 烧录后要正常启动，必须先清空板载 NOR Flash。仅重新烧录 eMMC 不会清除 NOR 中的旧引导程序。**
 
-1. 断电并取出 SD 卡，使用支持数据传输的 USB 线将开发板的 USB OTG 口连接到主机。
+1. eMMC / NOR 操作时断电并取出 SD 卡（第 2.2 节 SD 直烧流程应插入目标 SD 卡），使用支持数据传输的 USB 线将开发板的 USB OTG 口连接到主机。
 2. 按住板上丝印为 **BOOT** 的按键（用于进入 Maskrom 模式），再给开发板上电，然后松开按键。不同硬件版本的接口和按键位置以板上标识为准；不要把 Recovery 按键当作 BOOT 按键。
 3. 使用下面的 `ld` 命令确认仅连接了一块目标板，显示 `Maskrom` 后再继续。若显示 `Loader`，可执行 `rd 3` 切到 Maskrom，再用 `ld` 检查。
 4. Windows 先解压并安装仓库内 [DriverAssitant_v5.14.zip](../tools/flashing/DriverAssitant_v5.14.zip) 的 Rockusb 驱动（SDK 原路径见上表），以管理员身份打开 PowerShell。设备管理器中应能识别 Rockusb 设备。Windows 指定工具包内是 **命令行程序 `upgrade_tool.exe`**，不是 RKDevTool 图形界面。

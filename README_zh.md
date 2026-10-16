@@ -43,7 +43,7 @@
 ## 编译与烧录
 
 - [编译说明](docs/BUILD-FLOW_zh.md)：`recomputer_rk3576_devkit` 与 `recomputer_rk3588_devkit` 的完整命令、融合流程和产物路径。
-- [烧录说明](docs/FLASHING_zh.md)：Windows SD 启动卡、RK3576 的 NOR SD 引导准备、Linux / Windows eMMC 烧录，以及烧录 eMMC 前必须完成的 NOR Flash 清空步骤。
+- [烧录说明](docs/FLASHING_zh.md)：Windows SD 启动卡、RK3576 / RK3588 经 USB 直烧 SD 卡、RK3576 的 NOR SD 引导准备、Linux / Windows eMMC 烧录，以及烧录 eMMC 前必须完成的 NOR Flash 清空步骤。
 - [随仓库提供的烧录工具](tools/flashing/README.md)：四个工具与驱动的原始压缩包与 SHA-256 校验值。
 
 ## 快速开始
