@@ -1,0 +1,127 @@
+From c09026014e8baa5764ff344575203d589457de7e Mon Sep 17 00:00:00 2001
+From: GPenG Chen <302976981@qq.com>
+Date: Mon, 19 Oct 2026 11:09:50 +0000
+Subject: [PATCH] build.sh: support fused OTA package generation with -o -M -T
+
+- mkimage_ab.sh: skip super.img copy when GRF/SSI build has no
+  $OUT/super.img; fixes 'cp: cannot stat' packaging failure
+- rk_merge_target_files: pass --output-ota/--path to merge_target_files,
+  set PATH/LD_LIBRARY_PATH (delta_generator falls back to soong
+  intermediates) so the hermetic ota_from_target_files can find
+  fec/avbtool/delta_generator
+- build.sh: skip ota package/target-files copy gracefully in GRF/merge
+  mode where dist does not build them
+
+Output: rockdev/Image-<product>/<product>-ota-merged.zip (A/B full OTA)
+Change-Id: Iaaf1190fb3ea18b49074773a9a77554913f03fff
+---
+ build/rockchip/build.sh | 48 +++++++++++++++++++++++++++++++++++++++--
+ mkimage_ab.sh           |  8 +++++--
+ 2 files changed, 52 insertions(+), 4 deletions(-)
+
+diff --git a/build/rockchip/build.sh b/build/rockchip/build.sh
+index 466b6f81..1d0c27fd 100755
+--- a/build/rockchip/build.sh
++++ b/build/rockchip/build.sh
+@@ -254,6 +254,7 @@ function rk_merge_target_files() {
+     local merged_tf="$output_dir/${system_product}-target_files-merged.zip"
+     local merged_img="$output_dir/${system_product}-images-merged-fastboot.zip"
+     local super_img="$output_dir/super.img"
++    local ota_zip="$output_dir/${system_product}-ota-merged.zip"
+ 
+     local merge_args=()
+     if [[ "$use_python" = true ]]; then
+@@ -279,6 +280,30 @@ function rk_merge_target_files() {
+             --allow-partial-ab
+             -v
+         )
++        if [ "$BUILD_OTA" = true ]; then
++            # Generate the fused OTA package with the tool's built-in
++            # hermetic ota_from_target_files (--output-ota).
++            # NOTE: --path must be the PARENT of the host 'bin' dir
++            # (common.py looks up external tools as '<path>/bin/<tool>').
++            local host_out delta_dir
++            host_out="$(dirname "$(dirname "$merge_tool_dir")")"   # out/host/linux-x86
++            delta_dir="$host_out/bin"
++            if [ ! -x "$delta_dir/delta_generator" ]; then
++                # delta_generator is usually not installed into out/host/bin;
++                # fall back to the soong intermediates copy.
++                local a17_root dg_soong
++                a17_root="$(dirname "$(dirname "$(dirname "$host_out")")")"
++                dg_soong="$a17_root/out/soong/.intermediates/system/update_engine/delta_generator/linux_glibc_x86_64"
++                [ -x "$dg_soong/delta_generator" ] && delta_dir="$dg_soong"
++            fi
++            if [ ! -x "$delta_dir/delta_generator" ]; then
++                echo "ERROR: delta_generator not found, required for --output-ota"
++                echo "   Searched: $host_out/bin and soong intermediates"
++                return 1
++            fi
++            merge_args+=(--output-ota "$ota_zip")
++            merge_args+=(--path "$host_out")
++        fi
+     fi
+ 
+     echo ""
+@@ -289,6 +314,12 @@ function rk_merge_target_files() {
+     if [[ -n "$py_env" ]]; then
+         # Command-level PYTHONPATH, no export pollution
+         PYTHONPATH="$py_env" "${merge_args[@]}"
++    elif [ "$BUILD_OTA" = true ]; then
++        # PATH for fec/avbtool/delta_generator, LD_LIBRARY_PATH for host
++        # shared libs (e.g. libprotobuf needed by delta_generator).
++        PATH="$delta_dir:$host_out/bin:$PATH" \
++        LD_LIBRARY_PATH="$host_out/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
++        "${merge_args[@]}"
+     else
+         "${merge_args[@]}"
+     fi
+@@ -299,6 +330,9 @@ function rk_merge_target_files() {
+         echo "Merge completed successfully!"
+         echo "   Merged TF:  $merged_tf"
+         echo "   Merged IMG: $merged_img"
++        if [ "$BUILD_OTA" = true ] && [ -f "$ota_zip" ]; then
++            echo "   OTA Package: $ota_zip ($(du -h "$ota_zip" | cut -f1))"
++        fi
+ 
+         # Extract all images from merged IMG zip to output_dir
+         echo "Extracting merged images to $output_dir ..."
+@@ -869,8 +903,18 @@ if [ "$BUILD_ANDROID" = true ] ; then
+                 exit 1
+             fi
+         fi
+-        cp $OUT/$INTERNAL_OTA_PACKAGE_TARGET $IMAGE_PATH/
+-        cp $OUT/$INTERNAL_OTA_PACKAGE_OBJ_TARGET $IMAGE_PATH/
++        # In GRF/merge mode dist does not build an ota package zip; skip
++        # gracefully instead of failing with "cannot stat".
++        if ls $OUT/$INTERNAL_OTA_PACKAGE_TARGET >/dev/null 2>&1; then
++            cp $OUT/$INTERNAL_OTA_PACKAGE_TARGET $IMAGE_PATH/
++        else
++            echo "skip copy ota package: $OUT/$INTERNAL_OTA_PACKAGE_TARGET not found (GRF/merge build)"
++        fi
++        if ls $OUT/$INTERNAL_OTA_PACKAGE_OBJ_TARGET >/dev/null 2>&1; then
++            cp $OUT/$INTERNAL_OTA_PACKAGE_OBJ_TARGET $IMAGE_PATH/
++        else
++            echo "skip copy target files: $OUT/$INTERNAL_OTA_PACKAGE_OBJ_TARGET not found"
++        fi
+     else # regular build without OTA
+       if [ "$PRODUCT_BUILDING_GRF" = true ] || [ "$BUILD_MERGE" = true ] ; then
+         echo "start build grf/merge target file"
+diff --git a/mkimage_ab.sh b/mkimage_ab.sh
+index e60b835f..8c7185c1 100755
+--- a/mkimage_ab.sh
++++ b/mkimage_ab.sh
+@@ -137,8 +137,12 @@ if [ "$PRODUCT_USE_DYNAMIC_PARTITIONS" = "true" ]; then
+     if [ "$PRODUCT_RETROFIT_DYNAMIC_PARTITIONS" = "true" ]; then
+         echo "PRODUCT_RETROFIT_DYNAMIC_PARTITIONS is true, skip super.img "
+     else
+-        cp -a $OUT/super.img $IMAGE_PATH/super.img
+-        echo "copy super.img..."
++        if [ -f $OUT/super.img ]; then
++            cp -a $OUT/super.img $IMAGE_PATH/super.img
++            echo "copy super.img..."
++        else
++            echo "skip copy images: super.img (GRF/SSI vendor build has no \$OUT/super.img; OTA mass-production super.img is copied from super.img_intermediates below)"
++        fi
+     fi
+ fi
+ 
