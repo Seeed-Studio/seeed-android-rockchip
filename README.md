@@ -49,6 +49,7 @@ with a single command, and the two sides are then fused (see
 - [Build guide](docs/BUILD-FLOW.md): complete commands for `recomputer_rk3576_devkit` and `recomputer_rk3588_devkit`, fusion flow and output paths.
 - [Flashing guide](docs/FLASHING.md): Windows SD boot cards, direct USB-to-SD flashing for RK3576 / RK3588, RK3576 NOR preparation for SD boot, Linux / Windows eMMC flashing, and the required NOR Flash erase before eMMC boot.
 - [Bundled flashing tools](tools/flashing/README.md): the four original tool and driver archives and SHA-256 checksums.
+- [OTA validation](docs/OTA.md): check, install and verify a prebuilt fusion OTA using Python 3 and `adb`, without an SDK or build environment.
 
 ## Quick start
 
