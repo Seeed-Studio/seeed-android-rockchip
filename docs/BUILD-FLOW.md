@@ -22,6 +22,21 @@ cd /path/work/seeed-android-rockchip
 ./setup.sh --vendor-sdk /path/work/a14 --system-sdk /path/work/a17
 ```
 
+### Build script
+
+After integrating with `setup.sh`, run the script from this repository to choose a product and build A17, then A14, fuse and pack the firmware:
+
+```bash
+./seeed_android_build.sh
+# Or specify the product, job count and SDK paths
+./seeed_android_build.sh --product rk3576 -j 16
+./seeed_android_build.sh --product rk3588 --system-sdk /path/work/a17 --vendor-sdk /path/work/a14
+# Validate paths and print commands without sourcing SDKs or compiling
+./seeed_android_build.sh --product rk3576 --dry-run
+```
+
+Defaults: sibling `a17/` and `a14/`, `userdebug` variant, and each SDK's default `out/` directory. Use `--variant user` for a user build. The script uses a separate shell for each SDK and uses A17’s `out/file_name_tag.txt` to locate the current target-files ZIP and checks its product/variant metadata. It verifies the SDK root and lunch environment before each build and rejects an unchanged final `update.img`. Valid incremental A17 outputs may be reused after `make dist` succeeds. It does not run `setup.sh` automatically and stops on failure. Do not run concurrent builds in the same SDK trees. See `./seeed_android_build.sh --help` for all options.
+
 ## 2. Choose a board
 
 | Board | A17 lunch | A14 lunch | A14 firmware directory |

@@ -22,6 +22,21 @@ cd /path/work/seeed-android-rockchip
 ./setup.sh --vendor-sdk /path/work/a14 --system-sdk /path/work/a17
 ```
 
+### 使用编译脚本
+
+完成 `setup.sh` 集成后，可以在本仓库运行脚本，按菜单选择产品并依次完成 A17 编译、A14 编译、融合和打包：
+
+```bash
+./seeed_android_build.sh
+# 或直接指定产品、并行数与 SDK 路径
+./seeed_android_build.sh --product rk3576 -j 16
+./seeed_android_build.sh --product rk3588 --system-sdk /path/work/a17 --vendor-sdk /path/work/a14
+# 仅检查路径和显示命令，不加载 SDK 环境、不执行编译
+./seeed_android_build.sh --product rk3576 --dry-run
+```
+
+默认使用仓库同级的 `a17/`、`a14/`，构建变体为 `userdebug`；可用 `--variant user` 切换。脚本使用 SDK 默认的 `out/` 目录，分别在独立 shell 中构建两侧，并按 A17 的 `out/file_name_tag.txt` 定位当前 target-files ZIP、核对包内产品与变体。每侧编译前核对 SDK 根目录和 lunch 环境，最终拒绝未更新的 `update.img`；允许 A17 在 `make dist` 成功后复用有效的增量构建产物。脚本不会自动运行 `setup.sh`；遇到失败会停止。不要在相同 SDK 树中同时运行多个构建。完整选项见 `./seeed_android_build.sh --help`。
+
 ## 2. 选择开发板
 
 | 开发板 | A17 lunch | A14 lunch | A14 固件目录 |
