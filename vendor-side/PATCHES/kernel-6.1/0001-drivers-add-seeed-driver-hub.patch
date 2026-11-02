@@ -1,0 +1,39 @@
+From f4102f51fb1534be129596c4ae72cb016271efdf Mon Sep 17 00:00:00 2001
+From: GPenG Chen <302976981@qq.com>
+Date: Thu, 29 Oct 2026 08:32:27 +0000
+Subject: [PATCH 1/2] drivers: add seeed driver hub
+
+All seeed-added drivers build out of drivers/seeed/ (Kconfig, Makefile
+and sources carried as new files by the seeed-android-rockchip overlay,
+vendor-side/TREE/), so adding a driver no longer hooks Kconfig/Makefile
+inside the subsystem it would naturally live in. This two-line hook is
+the only in-tree modification the overlay needs, independent of how
+many drivers follow.
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>
+Change-Id: I7c1a4e2b9d5f8031c6a2b7e4f5d6c8b9a0e1f2a3
+---
+ drivers/Kconfig  | 2 ++
+ drivers/Makefile | 2 ++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/drivers/Kconfig b/drivers/Kconfig
+index 06753118ab4a..0d5907484fc4 100644
+--- a/drivers/Kconfig
++++ b/drivers/Kconfig
+@@ -248,3 +248,5 @@ source "drivers/headset_observe/Kconfig"
+ source "drivers/rknpu/Kconfig"
+ 
+ endmenu
++
++source "drivers/seeed/Kconfig"
+diff --git a/drivers/Makefile b/drivers/Makefile
+index 29874ab087a0..b83a7ab1eeaa 100644
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -193,3 +193,5 @@ obj-$(CONFIG_RK_FLASH)		+= rkflash/
+ obj-$(CONFIG_RK_HEADSET)	+= headset_observe/
+ obj-$(CONFIG_RK_NAND)		+= rk_nand/
+ obj-$(CONFIG_ROCKCHIP_RKNPU)	+= rknpu/
++
++obj-y				+= seeed/

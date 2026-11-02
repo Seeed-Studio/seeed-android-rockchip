@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: GPL-2.0
+#
+# Power / backlight regulators (upstream equivalent: drivers/regulator/).
+
+config REGULATOR_RASPBERRYPI_TOUCHSCREEN_V2
+	tristate "Raspberry Pi 7-inch touchscreen panel V2 regulator"
+	depends on BACKLIGHT_CLASS_DEVICE
+	depends on I2C
+	depends on OF_GPIO
+	select REGMAP_I2C
+	help
+	  This driver supports the regulator microcontroller on the Raspberry
+	  Pi 7-inch touchscreen unit (V2). The regulator is used to enable
+	  power to the display and to control backlight.

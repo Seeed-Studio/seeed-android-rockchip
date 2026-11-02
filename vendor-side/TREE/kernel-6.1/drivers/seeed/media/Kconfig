@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: GPL-2.0
+#
+# Camera and display media drivers (upstream equivalent: drivers/media/).
+
+config VIDEO_IMX708
+	tristate "Sony IMX708 sensor support"
+	depends on I2C && VIDEO_DEV
+	select MEDIA_CONTROLLER
+	select VIDEO_V4L2_SUBDEV_API
+	select V4L2_FWNODE

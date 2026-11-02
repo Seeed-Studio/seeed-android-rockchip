@@ -8,9 +8,16 @@ reviewed directly in this repository:
 ```
 vendor-side/TREE/kernel-6.1/arch/arm64/boot/dts/rockchip/<product>.dts
 vendor-side/TREE/kernel-6.1/arch/arm64/configs/<product>.config
-vendor-side/TREE/kernel-6.1/drivers/<subsystem>/<driver>.c
+vendor-side/TREE/kernel-6.1/drivers/seeed/<category>/<driver>.c
 vendor-side/TREE/u-boot/configs/<product>.config
 ```
+
+Kernel drivers live under the `drivers/seeed/` hub (one category
+subdirectory per subsystem: `media/`, `regulator/`, ...), each category
+carrying its own `Kconfig` and `Makefile`. The hub is wired into the SDK
+kernel by a **one-time** two-line hook patch (`source` in `drivers/Kconfig`,
+`obj-y` in `drivers/Makefile`); adding a driver afterwards only touches
+this directory — no new SDK patches.
 
 `setup.sh` installs every file into its SDK repository — a real copy by
 default, a symlink with `--symlink` (edits in this repo then take effect on
@@ -35,10 +42,10 @@ removal of files dropped from this directory since the last run.
   untracked); re-run `./setup.sh` to restore them.
 - Edits belong in this repository. In copy mode re-run `./setup.sh` after
   changing files here; with `--symlink` the next build picks them up.
-- `../PATCHES/` series may reference TREE files (e.g. a Kconfig/Makefile
-  hookup for a TREE-carried driver, or `PRODUCT_KERNEL_DTS` selecting a
-  TREE-carried DTS): patches alone are not self-contained — TREE + PATCHES
-  together are the product's in-tree changes.
+- `../PATCHES/` series may reference TREE files (e.g. the one-time seeed
+  hub hookup, or `PRODUCT_KERNEL_DTS` selecting a TREE-carried DTS):
+  patches alone are not self-contained — TREE + PATCHES together are the
+  product's in-tree changes.
 
 Kernel and u-boot files here are derivative works of the upstream sources
 they build on and carry their licenses (GPLv2 for the kernel — see the file

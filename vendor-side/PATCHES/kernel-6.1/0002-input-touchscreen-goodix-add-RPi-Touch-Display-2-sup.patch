@@ -1,6 +1,6 @@
-From b4f06c9bf677c18ac56504a589a0313f5824b122 Mon Sep 17 00:00:00 2001
+From 0cf2ee49a468915da19df35e38eb3f79c68c0cb2 Mon Sep 17 00:00:00 2001
 From: GPenG Chen <302976981@qq.com>
-Date: Wed, 30 Sep 2026 01:12:34 +0000
+Date: Thu, 29 Oct 2026 08:32:37 +0000
 Subject: [PATCH 2/2] input: touchscreen: goodix: add RPi Touch Display 2
  support
 
@@ -8,17 +8,16 @@ The display's GT911 touch INT line is wired to the panel MCU instead
 of the host SoC, so no IRQ is available: add a ~60 Hz polling
 fallback to the goodix driver when client->irq is 0.
 
-Also hook up the panel V2 regulator
-(REGULATOR_RASPBERRYPI_TOUCHSCREEN_V2); its source and the DTS are
-carried as new files by the seeed-android-rockchip overlay.
+The panel V2 regulator this depends on
+(REGULATOR_RASPBERRYPI_TOUCHSCREEN_V2) and the DTS are carried as
+new files by the seeed-android-rockchip overlay under drivers/seeed/.
 
+Co-Authored-By: Claude Code <noreply@anthropic.com>
 Change-Id: I1038095e5095c585444d2e125057fd7136091a49
 ---
  drivers/input/touchscreen/goodix.c | 63 +++++++++++++++++++++++++++---
  drivers/input/touchscreen/goodix.h |  4 ++
- drivers/regulator/Kconfig          | 11 ++++++
- drivers/regulator/Makefile         |  1 +
- 4 files changed, 73 insertions(+), 6 deletions(-)
+ 2 files changed, 61 insertions(+), 6 deletions(-)
 
 diff --git a/drivers/input/touchscreen/goodix.c b/drivers/input/touchscreen/goodix.c
 index 6de64b3f900f..72593591d180 100644
@@ -150,37 +149,3 @@ index 87797cc88b32..8e6dbb694183 100644
  };
  
  int goodix_i2c_read(struct i2c_client *client, u16 reg, u8 *buf, int len);
-diff --git a/drivers/regulator/Kconfig b/drivers/regulator/Kconfig
-index 23e43977f5ba..edc9b47c50ba 100644
---- a/drivers/regulator/Kconfig
-+++ b/drivers/regulator/Kconfig
-@@ -1049,6 +1049,17 @@ config REGULATOR_RASPBERRYPI_TOUCHSCREEN_ATTINY
- 	  touchscreen unit. The regulator is used to enable power to the
- 	  TC358762, display and to control backlight.
- 
-+config REGULATOR_RASPBERRYPI_TOUCHSCREEN_V2
-+	tristate "Raspberry Pi 7-inch touchscreen panel V2 regulator"
-+	depends on BACKLIGHT_CLASS_DEVICE
-+	depends on I2C
-+	depends on OF_GPIO
-+	select REGMAP_I2C
-+	help
-+	  This driver supports the regulator microcontroller on the Raspberry
-+	  Pi 7-inch touchscreen unit (V2). The regulator is used to enable
-+	  power to the display and to control backlight.
-+
- config REGULATOR_RC5T583
- 	tristate "RICOH RC5T583 Power regulators"
- 	depends on MFD_RC5T583
-diff --git a/drivers/regulator/Makefile b/drivers/regulator/Makefile
-index bb7b90150180..504caa97a04d 100644
---- a/drivers/regulator/Makefile
-+++ b/drivers/regulator/Makefile
-@@ -126,6 +126,7 @@ obj-$(CONFIG_REGULATOR_PBIAS) += pbias-regulator.o
- obj-$(CONFIG_REGULATOR_PCAP) += pcap-regulator.o
- obj-$(CONFIG_REGULATOR_PCF50633) += pcf50633-regulator.o
- obj-$(CONFIG_REGULATOR_RASPBERRYPI_TOUCHSCREEN_ATTINY)  += rpi-panel-attiny-regulator.o
-+obj-$(CONFIG_REGULATOR_RASPBERRYPI_TOUCHSCREEN_V2)	+= rpi-panel-v2-regulator.o
- obj-$(CONFIG_REGULATOR_RC5T583)  += rc5t583-regulator.o
- obj-$(CONFIG_REGULATOR_RK801)   += rk801-regulator.o
- obj-$(CONFIG_REGULATOR_RK806)	+= rk806-regulator.o

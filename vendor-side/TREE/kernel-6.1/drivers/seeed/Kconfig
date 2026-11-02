@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: GPL-2.0
+#
+# Hub for drivers the seeed overlay carries whole. The one-time hooks in
+# drivers/Kconfig and drivers/Makefile descend here; adding a driver only
+# touches this directory (its source plus a config and obj line in the
+# matching category), never the SDK's subsystem files.
+
+menu "Seeed additional drivers"
+
+source "drivers/seeed/media/Kconfig"
+source "drivers/seeed/regulator/Kconfig"
+
+endmenu
