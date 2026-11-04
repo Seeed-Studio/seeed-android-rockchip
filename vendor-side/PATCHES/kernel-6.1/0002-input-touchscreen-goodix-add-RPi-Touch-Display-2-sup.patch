@@ -1,4 +1,4 @@
-From 0cf2ee49a468915da19df35e38eb3f79c68c0cb2 Mon Sep 17 00:00:00 2001
+From 933bb8cfd821f65573f79d673c4a674267d385c6 Mon Sep 17 00:00:00 2001
 From: GPenG Chen <302976981@qq.com>
 Date: Thu, 29 Oct 2026 08:32:37 +0000
 Subject: [PATCH 2/2] input: touchscreen: goodix: add RPi Touch Display 2

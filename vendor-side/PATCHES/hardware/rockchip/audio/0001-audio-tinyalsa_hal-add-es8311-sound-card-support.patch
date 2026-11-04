@@ -1,4 +1,4 @@
-From ef4cc66f36d958ae817af6fe6385d8c351a8f56d Mon Sep 17 00:00:00 2001
+From af705ccc4acde0e220d243961f7013d9cea7776b Mon Sep 17 00:00:00 2001
 From: GPenG Chen <302976981@qq.com>
 Date: Tue, 29 Sep 2026 07:11:39 +0000
 Subject: [PATCH] audio: tinyalsa_hal: add es8311 sound card support
@@ -28,10 +28,10 @@ Change-Id: Iec30157848b80b23257eba0acef8a4d1782a8998
  create mode 100644 tinyalsa_hal/codec_config/es8311_config.h
 
 diff --git a/tinyalsa_hal/audio_hw.c b/tinyalsa_hal/audio_hw.c
-index 9ffb232..abdc0d1 100644
+index f871ef2..bf8f877 100644
 --- a/tinyalsa_hal/audio_hw.c
 +++ b/tinyalsa_hal/audio_hw.c
-@@ -523,6 +523,7 @@ struct dev_proc_info SPEAKER_OUT_NAME[] = /* add codes& dai name here*/
+@@ -536,6 +536,7 @@ struct dev_proc_info SPEAKER_OUT_NAME[] = /* add codes& dai name here*/
      {"realtekrt5678co", NULL,},
      {"rkhdmianalogsnd", NULL,},
      {"rockchipcx2072x", NULL,},
@@ -39,7 +39,7 @@ index 9ffb232..abdc0d1 100644
      {"rockchipes8316c", NULL,},
      {"rockchipes8323c", NULL,},
      {"rockchipes8388c", NULL,},
-@@ -594,6 +595,7 @@ struct dev_proc_info MIC_IN_NAME[] =
+@@ -607,6 +608,7 @@ struct dev_proc_info MIC_IN_NAME[] =
      {"realtekrt5670c", NULL,},
      {"realtekrt5672c", NULL,},
      {"realtekrt5678co", NULL,},

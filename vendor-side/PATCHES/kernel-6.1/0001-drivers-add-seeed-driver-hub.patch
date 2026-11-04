@@ -1,4 +1,4 @@
-From f4102f51fb1534be129596c4ae72cb016271efdf Mon Sep 17 00:00:00 2001
+From c4da3d2c2550fe6dd68ec4f5d7363d7396e2cc3a Mon Sep 17 00:00:00 2001
 From: GPenG Chen <302976981@qq.com>
 Date: Thu, 29 Oct 2026 08:32:27 +0000
 Subject: [PATCH 1/2] drivers: add seeed driver hub

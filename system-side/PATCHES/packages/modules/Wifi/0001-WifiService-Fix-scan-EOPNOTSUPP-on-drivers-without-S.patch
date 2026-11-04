@@ -1,4 +1,4 @@
-From a2090f18bd6dd81fcc7634b314e20dbb8ca81058 Mon Sep 17 00:00:00 2001
+From 3272064865a4875bfcd2bd6c3d91a0aeffac686f Mon Sep 17 00:00:00 2001
 From: GPenG Chen <302976981@qq.com>
 Date: Tue, 29 Sep 2026 07:28:33 +0000
 Subject: [PATCH] WifiService: Fix scan EOPNOTSUPP on drivers without

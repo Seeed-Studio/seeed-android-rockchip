@@ -1,4 +1,4 @@
-From c09026014e8baa5764ff344575203d589457de7e Mon Sep 17 00:00:00 2001
+From 18179a677d1245ab41e5459a813d0b00379acea2 Mon Sep 17 00:00:00 2001
 From: GPenG Chen <302976981@qq.com>
 Date: Mon, 19 Oct 2026 11:09:50 +0000
 Subject: [PATCH] build.sh: support fused OTA package generation with -o -M -T
@@ -20,10 +20,10 @@ Change-Id: Iaaf1190fb3ea18b49074773a9a77554913f03fff
  2 files changed, 52 insertions(+), 4 deletions(-)
 
 diff --git a/build/rockchip/build.sh b/build/rockchip/build.sh
-index 466b6f81..1d0c27fd 100755
+index b547b708..30f9b6cd 100755
 --- a/build/rockchip/build.sh
 +++ b/build/rockchip/build.sh
-@@ -254,6 +254,7 @@ function rk_merge_target_files() {
+@@ -239,6 +239,7 @@ function rk_merge_target_files() {
      local merged_tf="$output_dir/${system_product}-target_files-merged.zip"
      local merged_img="$output_dir/${system_product}-images-merged-fastboot.zip"
      local super_img="$output_dir/super.img"
@@ -31,8 +31,8 @@ index 466b6f81..1d0c27fd 100755
  
      local merge_args=()
      if [[ "$use_python" = true ]]; then
-@@ -279,6 +280,30 @@ function rk_merge_target_files() {
-             --allow-partial-ab
+@@ -266,6 +267,30 @@ function rk_merge_target_files() {
+             --rebuild-sepolicy
              -v
          )
 +        if [ "$BUILD_OTA" = true ]; then
@@ -62,7 +62,7 @@ index 466b6f81..1d0c27fd 100755
      fi
  
      echo ""
-@@ -289,6 +314,12 @@ function rk_merge_target_files() {
+@@ -288,6 +313,12 @@ function rk_merge_target_files() {
      if [[ -n "$py_env" ]]; then
          # Command-level PYTHONPATH, no export pollution
          PYTHONPATH="$py_env" "${merge_args[@]}"
@@ -75,7 +75,7 @@ index 466b6f81..1d0c27fd 100755
      else
          "${merge_args[@]}"
      fi
-@@ -299,6 +330,9 @@ function rk_merge_target_files() {
+@@ -298,6 +329,9 @@ function rk_merge_target_files() {
          echo "Merge completed successfully!"
          echo "   Merged TF:  $merged_tf"
          echo "   Merged IMG: $merged_img"
@@ -85,7 +85,7 @@ index 466b6f81..1d0c27fd 100755
  
          # Extract all images from merged IMG zip to output_dir
          echo "Extracting merged images to $output_dir ..."
-@@ -869,8 +903,18 @@ if [ "$BUILD_ANDROID" = true ] ; then
+@@ -868,8 +902,18 @@ if [ "$BUILD_ANDROID" = true ] ; then
                  exit 1
              fi
          fi
